@@ -1,12 +1,117 @@
-ul.tasks {
-	width: 42rem;
-	margin: 1rem auto;
-	list-style-type: none;
-	padding: 0;
+h1.title {
+  color: #333;
+  font-size: 2rem;
+  text-align: center;
 }
 
-li.task {
-	padding: 10px;
-	border: 1px solid #ccc;
-	margin-bottom: 10px;
+.container {
+  width: 100%;
+}
+
+.bingoTable {
+  margin: 0 auto;
+}
+
+.languageHeader,
+.regulationHeader {
+  background: #333;
+  color: #fff;
+  font-size: 1.5rem;
+  padding: 0.5rem;
+  box-sizing: border-box;
+  font-family: monospace;
+  border: 2px solid white;
+}
+
+.languageHeader {
+  width: 4rem;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  text-align: left;
+}
+
+.regulationHeader {
+  height: 4rem;
+}
+
+.cell {
+  border: 0.1rem solid #fff;
+  box-sizing: border-box;
+  font-family: monospace;
+  border-radius: 8px;
+  color: white;
+  font-weight: bold;
+  font-size: 1.5rem;
+  text-align: center;
+  transition: background-color 0.3s;
+  background-color: #ddd;
+  position: relative;
+  overflow: hidden;
+}
+
+.cell.user-0,
+.cell.user-01 {
+  background-color: rgb(222, 108, 108);
+}
+
+.cell.user-1 {
+  background-color: rgb(43, 106, 182);
+}
+
+.cell.user-01::before {
+  content: "";
+  display: block;
+  border-left: rgb(43, 106, 182) 4.2rem solid;
+  border-bottom: transparent 4.2rem solid;
+  position: absolute;
+  width: 0;
+  height: 0;
+  top: 0;
+  left: 0;
+  z-index: 0;
+}
+
+.cell a {
+  display: block;
+  width: 4rem;
+  height: 4rem;
+  line-height: 4rem;
+  color: white;
+  text-decoration: none;
+  position: relative;
+  z-index: 1;
+}
+
+.userScores {
+  display: flex;
+  justify-content: center;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 800px;
+  font-size: 3rem;
+}
+
+.userScore {
+  font-weight: bold;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.userScore .otherScores {
+  font-size: 1rem;
+  font-weight: normal;
+  text-align: center;
+}
+
+.userScores .userScoreContainer {
+  display: flex;
+}
+
+.userScore.user-0 {
+  color: rgb(222, 108, 108);
+}
+
+.userScore.user-1 {
+  color: rgb(43, 106, 182);
 }

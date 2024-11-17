@@ -6,8 +6,14 @@ export interface UseFireStoreReturn<T> {
 	error: FirestoreError | null;
 }
 
-export interface Task extends DocumentData {
-	uid: string;
-	task: string;
-	createdAt: Timestamp;
+export interface Submission extends DocumentData {
+	id: number,
+	user: string,
+	date: string,
+	language: string,
+	time: number,
+	memory: number,
+	points: number,
+	result: string,
+	code: string | null,
 }
