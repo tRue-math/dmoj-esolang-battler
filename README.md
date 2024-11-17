@@ -2,4 +2,4 @@
 
 Simple TodoMVC built with Solid.js (SolidStart) and Firebase.
 
-[Demo](https://solid-start-firebase-template.web.app/)
+[Demo](https://tsg-live-13-golf-visualizer.web.app/)
