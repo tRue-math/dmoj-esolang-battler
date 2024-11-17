@@ -50,7 +50,7 @@ const calculateScore = (submission: Submission, regulation: Regulation) => {
 			break;
 		}
 		case 'Short':
-			score = submission.code?.length > 0 || null;
+			score = submission.code?.length ?? null;
 			break;
 		case 'Free':
 			score = 1;
