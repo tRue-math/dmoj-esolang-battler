@@ -23,7 +23,10 @@ if (import.meta.env.DEV && !isServer) {
 	connectAuthEmulator(auth, 'http://localhost:9099');
 }
 
-const Submissions = collection(db, 'submissions') as CollectionReference<Submission>;
+const Submissions = collection(
+	db,
+	'submissions',
+) as CollectionReference<Submission>;
 
 await signInAnonymously(auth);
 

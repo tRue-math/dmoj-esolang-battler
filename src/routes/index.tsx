@@ -1,11 +1,11 @@
-import { Accessor, createMemo, type Component } from 'solid-js';
-import { Submissions } from '~/lib/firebase';
-import { useFirestore } from 'solid-firebase';
-import { groupBy, minBy, sortBy, uniq, zip } from 'lodash-es';
-import type { Submission } from '~/lib/schema';
+import {type Accessor, createMemo, type Component} from 'solid-js';
+import {Submissions} from '~/lib/firebase';
+import {useFirestore} from 'solid-firebase';
+import {groupBy, minBy, sortBy, uniq, zip} from 'lodash-es';
+import type {Submission} from '~/lib/schema';
 
 import styles from './index.module.css';
-import { useSearchParams } from '@solidjs/router';
+import {useSearchParams} from '@solidjs/router';
 
 const languages: [string, string][] = [
 	['Sed', 'SED'],
@@ -23,23 +23,17 @@ const regulations = [
 	'Vertical',
 ] as const;
 
-const pars = [
-	10,
-	500,
-	null,
-	100,
-	100,
-];
+const pars = [10, 500, null, 100, 100];
 
-type Regulation = typeof regulations[number];
+type Regulation = (typeof regulations)[number];
 
 type CellStatus = 'accepted' | 'rejected' | 'not-submitted';
 
 interface Cell {
-	owners: number[],
-	solvers: number[],
-	score: number | null,
-	submissionId: number | null,
+	owners: number[];
+	solvers: number[];
+	score: number | null;
+	submissionId: number | null;
 }
 
 const calculateScore = (submission: Submission, regulation: Regulation) => {
@@ -48,26 +42,29 @@ const calculateScore = (submission: Submission, regulation: Regulation) => {
 	let score: number | null = 0;
 
 	switch (regulation) {
-		case 'SymbolLess':
+		case 'SymbolLess': {
 			const symbols = '+-*/%&|^[]';
-			score = Array.from(submission.code || '')
-				.filter((char) => symbols.includes(char))
-				.length;
+			score = Array.from(submission.code || '').filter((char) =>
+				symbols.includes(char),
+			).length;
 			break;
+		}
 		case 'Short':
-			score = submission.code?.length || null;
+			score = submission.code?.length > 0|| null;
 			break;
 		case 'Free':
 			score = 1;
 			break;
-		case 'Simple':
+		case 'Simple': {
 			const uniqueCharacters = new Set(Array.from(submission.code || ''));
 			score = uniqueCharacters.size;
 			break;
-		case 'Vertical':
+		}
+		case 'Vertical': {
 			const lines = (submission.code || '').split(/\r?\n/);
 			score = Math.max(...lines.map((line) => line.length));
 			break;
+		}
 	}
 
 	if (par !== null && score !== null && score > par) {
@@ -99,33 +96,55 @@ const Index: Component = () => {
 		}
 
 		const cells: Cell[][] = [];
-		const submissionsByLanguage = groupBy(submissions.data, (submission) => submission.language);
+		const submissionsByLanguage = groupBy(
+			submissions.data,
+			(submission) => submission.language,
+		);
 
 		const targetUsers = users();
 
 		for (const regulation of regulations) {
 			const row: Cell[] = [];
 
-			for (const [languageName, languageId] of languages) {
+			for (const [_languageName, languageId] of languages) {
 				const submissions = submissionsByLanguage[languageId] || [];
 
 				const acceptedSubmissions = submissions
 					.filter((submission) => submission.result === 'AC')
 					.filter((submission) => targetUsers.includes(submission.user))
-					.filter((submission) => calculateScore(submission, regulation) !== null);
-				const scoreSubmission = minBy(acceptedSubmissions, (submission) => calculateScore(submission, regulation));
-				const score = scoreSubmission ? calculateScore(scoreSubmission, regulation) : null;
-				const bestSubmissions = score ? acceptedSubmissions.filter((submission) => calculateScore(submission, regulation) === score) : [];
+					.filter(
+						(submission) => calculateScore(submission, regulation) !== null,
+					);
+				const scoreSubmission = minBy(acceptedSubmissions, (submission) =>
+					calculateScore(submission, regulation),
+				);
+				const score = scoreSubmission
+					? calculateScore(scoreSubmission, regulation)
+					: null;
+				const bestSubmissions = score
+					? acceptedSubmissions.filter(
+							(submission) => calculateScore(submission, regulation) === score,
+						)
+					: [];
 
 				const cell: Cell = {
-					owners: sortBy(uniq(bestSubmissions.map((submission) => (
-						targetUsers.indexOf(submission.user)
-					)))),
-					solvers: sortBy(uniq(acceptedSubmissions.map((submission) => (
-						targetUsers.indexOf(submission.user)
-					)))),
+					owners: sortBy(
+						uniq(
+							bestSubmissions.map((submission) =>
+								targetUsers.indexOf(submission.user),
+							),
+						),
+					),
+					solvers: sortBy(
+						uniq(
+							acceptedSubmissions.map((submission) =>
+								targetUsers.indexOf(submission.user),
+							),
+						),
+					),
 					score,
-					submissionId: bestSubmissions.length >= 1 ? bestSubmissions[0].id : null,
+					submissionId:
+						bestSubmissions.length > 0? bestSubmissions[0].id : null,
 				};
 
 				row.push(cell);
@@ -138,9 +157,9 @@ const Index: Component = () => {
 	});
 
 	interface UserScore {
-		bingo: number,
-		solves: number,
-		owners: number,
+		bingo: number;
+		solves: number;
+		owners: number;
 	}
 
 	const userScores = createMemo<UserScore[]>(() => {
@@ -171,27 +190,35 @@ const Index: Component = () => {
 		// Vertical lines
 		for (let i = 0; i < 5; i++) {
 			const users = cells.map((row) => row[i].owners);
-			const commonUsers = users.reduce((prev, current) => prev.filter((user) => current.includes(user)));
+			const commonUsers = users.reduce((prev, current) =>
+				prev.filter((user) => current.includes(user)),
+			);
 			commonUsers.forEach(addScore);
 		}
 
 		// Horizontal lines
 		for (const row of cells) {
 			const users = row.map((cell) => cell.owners);
-			const commonUsers = users.reduce((prev, current) => prev.filter((user) => current.includes(user)));
+			const commonUsers = users.reduce((prev, current) =>
+				prev.filter((user) => current.includes(user)),
+			);
 			commonUsers.forEach(addScore);
 		}
 
 		// Diagonal lines
 		{
 			const users = [0, 1, 2, 3, 4].map((i) => cells[i][i].owners);
-			const commonUsers = users.reduce((prev, current) => prev.filter((user) => current.includes(user)));
+			const commonUsers = users.reduce((prev, current) =>
+				prev.filter((user) => current.includes(user)),
+			);
 			commonUsers.forEach(addScore);
 		}
 
 		{
 			const users = [0, 1, 2, 3, 4].map((i) => cells[i][4 - i].owners);
-			const commonUsers = users.reduce((prev, current) => prev.filter((user) => current.includes(user)));
+			const commonUsers = users.reduce((prev, current) =>
+				prev.filter((user) => current.includes(user)),
+			);
 			commonUsers.forEach(addScore);
 		}
 
@@ -238,44 +265,48 @@ const Index: Component = () => {
 				<table class={styles.bingoTable}>
 					<thead>
 						<tr>
-							<th></th>
+							<th />
 							{languages.map(([languageName]) => (
-								<th class={styles.languageHeader}>
-									{languageName}
-								</th>
+								<th class={styles.languageHeader}>{languageName}</th>
 							))}
 						</tr>
 					</thead>
 					<tbody>
-						{zip(bingoCells(), regulations, pars).map(([cells, regulation, par]) => (
-							<tr>
-								<th class={styles.regulationHeader}>
-									{regulation} {par === null ? '' : `(Par ${par})`}
-								</th>
-								{cells?.map((cell) => (
-									<td
-										class={styles.cell}
-										classList={{
-											[styles[`user-${cell.owners.join('')}`]]: true,
-										}}
-									>
-										<a
-											target="_blank"
-											rel="noopener noreferrer"
-											href={cell.submissionId === null ? undefined : `http://35.193.86.117:8000/submission/${cell.submissionId}`}
+						{zip(bingoCells(), regulations, pars).map(
+							([cells, regulation, par]) => (
+								<tr>
+									<th class={styles.regulationHeader}>
+										{regulation} {par === null ? '' : `(Par ${par})`}
+									</th>
+									{cells?.map((cell) => (
+										<td
+											class={styles.cell}
+											classList={{
+												[styles[`user-${cell.owners.join('')}`]]: true,
+											}}
 										>
-											{regulation === 'Free' ? '' : cell.score}
-										</a>
-									</td>
-								))}
-							</tr>
-						))}
+											<a
+												target="_blank"
+												rel="noopener noreferrer"
+												href={
+													cell.submissionId === null
+														? undefined
+														: `http://35.193.86.117:8000/submission/${cell.submissionId}`
+												}
+											>
+												{regulation === 'Free' ? '' : cell.score}
+											</a>
+										</td>
+									))}
+								</tr>
+							),
+						)}
 					</tbody>
 				</table>
 			</div>
 
 			<div class={styles.userScores}>
-				{users().map((user, i) => (
+				{users().map((user, i) =>
 					i === 0 ? (
 						<span
 							classList={{
@@ -287,7 +318,8 @@ const Index: Component = () => {
 								{user} {userScores()[i].bingo}
 							</span>
 							<span class={styles.otherScores}>
-								solves: {userScores()[i].solves}, owners: {userScores()[i].owners}
+								solves: {userScores()[i].solves}, owners:{' '}
+								{userScores()[i].owners}
 							</span>
 						</span>
 					) : (
@@ -303,12 +335,13 @@ const Index: Component = () => {
 									{userScores()[i].bingo} {user}
 								</span>
 								<span class={styles.otherScores}>
-									solves: {userScores()[i].solves}, owners: {userScores()[i].owners}
+									solves: {userScores()[i].solves}, owners:{' '}
+									{userScores()[i].owners}
 								</span>
 							</span>
 						</span>
-					)
-				))}
+					),
+				)}
 			</div>
 		</div>
 	);

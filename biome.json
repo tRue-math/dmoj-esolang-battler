@@ -8,15 +8,23 @@
 		"rules": {
 			"all": true,
 			"style": {
-				"noDefaultExport": "off"
+				"noDefaultExport": "off",
+				"noNonNullAssertion": "off"
 			},
 			"correctness": {
-				"noNodejsModules": "off"
+				"noNodejsModules": "off",
+				"useJsxKeyInIterable": "off"
 			}
 		}
 	},
 	"files": {
-		"ignore": ["node_modules", "public", ".output", ".vinxi"]
+		"ignore": [
+			"node_modules",
+			"public",
+			".output",
+			".vinxi",
+			"lib"
+		]
 	},
 	"javascript": {
 		"formatter": {

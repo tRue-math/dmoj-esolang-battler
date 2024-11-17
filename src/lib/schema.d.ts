@@ -1,4 +1,4 @@
-import type {DocumentData, FirestoreError, Timestamp} from 'firebase/firestore';
+import type {DocumentData, FirestoreError} from 'firebase/firestore';
 
 export interface UseFireStoreReturn<T> {
 	data: T;
@@ -7,13 +7,13 @@ export interface UseFireStoreReturn<T> {
 }
 
 export interface Submission extends DocumentData {
-	id: number,
-	user: string,
-	date: string,
-	language: string,
-	time: number,
-	memory: number,
-	points: number,
-	result: string,
-	code: string | null,
+	id: number;
+	user: string;
+	date: string;
+	language: string;
+	time: number;
+	memory: number;
+	points: number;
+	result: string;
+	code: string | null;
 }
