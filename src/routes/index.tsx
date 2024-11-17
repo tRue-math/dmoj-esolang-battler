@@ -121,11 +121,13 @@ const Index: Component = () => {
 				const score = scoreSubmission
 					? calculateScore(scoreSubmission, regulation)
 					: null;
-				const bestSubmissions = score
-					? acceptedSubmissions.filter(
-							(submission) => calculateScore(submission, regulation) === score,
-						)
-					: [];
+				const bestSubmissions =
+					score === null
+						? []
+						: acceptedSubmissions.filter(
+								(submission) =>
+									calculateScore(submission, regulation) === score,
+							);
 
 				const cell: Cell = {
 					owners: sortBy(
