@@ -50,7 +50,7 @@ const calculateScore = (submission: Submission, regulation: Regulation) => {
 			break;
 		}
 		case 'Short':
-			score = submission.code?.length > 0|| null;
+			score = submission.code?.length > 0 || null;
 			break;
 		case 'Free':
 			score = 1;
@@ -144,7 +144,7 @@ const Index: Component = () => {
 					),
 					score,
 					submissionId:
-						bestSubmissions.length > 0? bestSubmissions[0].id : null,
+						bestSubmissions.length > 0 ? bestSubmissions[0].id : null,
 				};
 
 				row.push(cell);

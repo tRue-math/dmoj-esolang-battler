@@ -18,13 +18,7 @@
 		}
 	},
 	"files": {
-		"ignore": [
-			"node_modules",
-			"public",
-			".output",
-			".vinxi",
-			"lib"
-		]
+		"ignore": ["node_modules", "public", ".output", ".vinxi", "lib"]
 	},
 	"javascript": {
 		"formatter": {
