@@ -10,7 +10,8 @@
 		"lint": "biome lint --write",
 		"format": "biome format --write",
 		"test": "concurrently \"npm run dev:firebase\" \"npm run test:vitest\" --names firebase,vitest --kill-others --success first",
-		"test:vitest": "wait-on http-get://localhost:8080 http-get://localhost:5000 && vitest"
+		"test:vitest": "wait-on http-get://localhost:8080 http-get://localhost:5000 && vitest",
+		"install": "cd functions && npm install"
 	},
 	"dependencies": {
 		"@solidjs/router": "^0.15.1",
