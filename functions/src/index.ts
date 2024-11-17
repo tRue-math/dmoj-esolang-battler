@@ -5,8 +5,6 @@ import {initializeApp} from 'firebase-admin/app';
 import {getFirestore} from 'firebase-admin/firestore';
 import {defineString} from 'firebase-functions/params';
 
-process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
-
 const app = initializeApp();
 const db = getFirestore(app);
 

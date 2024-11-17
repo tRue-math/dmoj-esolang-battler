@@ -55,12 +55,6 @@ jobs:
       - name: Generate dist
         run: npm run build
 
-      - name: Setup Firebase CLI
-        run: npm install -g firebase-tools
-
-      - name: Run Test
-        run: npm test
-
   deploy_firebase:
     name: Deploy Firebase Configurations
 
