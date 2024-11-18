@@ -43,7 +43,7 @@ const calculateScore = (submission: Submission, regulation: Regulation) => {
 
 	switch (regulation) {
 		case 'SymbolLess': {
-			const symbols = '+-*/%&|^[]';
+			const symbols = '+-*/%&|^[]:';
 			score = Array.from(submission.code || '').filter((char) =>
 				symbols.includes(char),
 			).length;
