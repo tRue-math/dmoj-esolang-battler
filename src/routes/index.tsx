@@ -23,11 +23,9 @@ const regulations = [
 	'Vertical',
 ] as const;
 
-const pars = [10, 500, null, 100, 100];
+const pars = [10, 200, null, 50, 15];
 
 type Regulation = (typeof regulations)[number];
-
-type CellStatus = 'accepted' | 'rejected' | 'not-submitted';
 
 interface Cell {
 	owners: number[];
@@ -293,7 +291,7 @@ const Index: Component = () => {
 												href={
 													cell.submissionId === null
 														? undefined
-														: `http://35.193.86.117:8000/submission/${cell.submissionId}`
+														: `http://${import.meta.env.VITE_API_HOST}/submission/${cell.submissionId}`
 												}
 											>
 												{regulation === 'Free' ? '' : cell.score}

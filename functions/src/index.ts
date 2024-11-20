@@ -1,3 +1,4 @@
+import {onSchedule} from 'firebase-functions/v2/scheduler';
 import {onRequest} from 'firebase-functions/v2/https';
 import {onDocumentCreated} from 'firebase-functions/v2/firestore';
 import * as logger from 'firebase-functions/logger';
@@ -15,7 +16,9 @@ const apiHostConfig = defineString('API_HOST');
 const sessionIdConfig = defineString('SESSION_ID');
 const problemIdConfig = defineString('PROBLEM_ID');
 
-export const scrapeSubmissions = onRequest(async (_request, response) => {
+export const scrapeSubmissions = onSchedule('every 1 minutes', async () => {
+	logger.info('Scraping submissions');
+
 	const apiToken = apiTokenConfig.value();
 	const apiHost = apiHostConfig.value();
 	const problemId = problemIdConfig.value();
@@ -36,8 +39,6 @@ export const scrapeSubmissions = onRequest(async (_request, response) => {
 	const batch = db.batch();
 
 	for (const submission of data.objects) {
-		logger.info(`Adding submission ${submission.id}`);
-
 		batch.set(
 			Submission.doc(submission.id.toString()),
 			{
@@ -57,11 +58,39 @@ export const scrapeSubmissions = onRequest(async (_request, response) => {
 	await batch.commit();
 
 	logger.info(`Added ${data.objects.length} submissions`);
-
-	response.send('ok');
 });
 
-// TODO: Cache invalidation
+export const invalidateSubmissions = onRequest(async (req, res) => {
+	if (req.method !== 'POST') {
+		res.status(405).send('Method Not Allowed');
+		return;
+	}
+
+	logger.info('Invalidating submissions');
+
+	const batchSize = 500;
+
+	const query = Submission.orderBy('__name__').limit(batchSize);
+
+	let count = 0;
+
+	while (true) {
+		const snapshot = await query.get();
+
+		if (snapshot.empty) {
+			break;
+		}
+
+		const batch = db.batch();
+		for (const doc of snapshot.docs) {
+			batch.delete(doc.ref);
+			count++;
+		}
+		await batch.commit();
+	}
+
+	res.send(`Invalidated ${count} submissions`);
+});
 
 export const onSubmissionCreated = onDocumentCreated(
 	'submissions/{submissionId}',
