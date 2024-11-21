@@ -9,9 +9,11 @@
 		"start": "vinxi start",
 		"lint": "biome lint --write",
 		"format": "biome format --write",
+		"fix": "npm run format && npm run lint -- --unsafe",
 		"test": "concurrently \"npm run dev:firebase\" \"npm run test:vitest\" --names firebase,vitest --kill-others --success first",
 		"test:vitest": "wait-on http-get://localhost:8080 http-get://localhost:5000 && vitest",
-		"install": "cd functions && npm install"
+		"install": "cd functions && npm install",
+		"prepare": "husky"
 	},
 	"dependencies": {
 		"@solidjs/router": "^0.15.1",
@@ -34,6 +36,7 @@
 		"@testing-library/user-event": "^14.5.2",
 		"@types/lodash-es": "^4.17.12",
 		"cross-env": "^7.0.3",
+		"husky": "^9.1.7",
 		"jsdom": "^25.0.1",
 		"vitest": "^2.1.5",
 		"wait-on": "^8.0.1"
