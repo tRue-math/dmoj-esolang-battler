@@ -88,6 +88,31 @@ const Index: Component = () => {
 		return searchParams.users.split(',');
 	});
 
+	const dates = createMemo<{from: number; to: number}>(() => {
+		let datefrom = 0;
+		if (searchParams.datefrom) {
+			const datefromString = Array.isArray(searchParams.datefrom)
+				? searchParams.datefrom[0]
+				: searchParams.datefrom;
+			datefrom = new Date(datefromString).getTime();
+			datefrom = Number.isNaN(datefrom) ? 0 : datefrom;
+		}
+
+		let dateto = Number.POSITIVE_INFINITY;
+		if (searchParams.dateto) {
+			const datetoString = Array.isArray(searchParams.dateto)
+				? searchParams.dateto[0]
+				: searchParams.dateto;
+			dateto = new Date(datetoString).getTime();
+			dateto = Number.isNaN(dateto) ? Number.POSITIVE_INFINITY : dateto;
+		}
+
+		return {
+			from: datefrom,
+			to: dateto,
+		};
+	});
+
 	const bingoCells: Accessor<Cell[][]> = createMemo(() => {
 		if (!submissions.data) {
 			return [];
@@ -112,7 +137,11 @@ const Index: Component = () => {
 					.filter((submission) => targetUsers.includes(submission.user))
 					.filter(
 						(submission) => calculateScore(submission, regulation) !== null,
-					);
+					)
+					.filter((submission) => {
+						const date = new Date(submission.date).getTime();
+						return dates().from <= date && date <= dates().to;
+					});
 				const scoreSubmission = minBy(acceptedSubmissions, (submission) =>
 					calculateScore(submission, regulation),
 				);
