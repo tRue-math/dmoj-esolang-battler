@@ -27,6 +27,8 @@ const pars = [10, 200, null, 50, 15];
 
 type Regulation = (typeof regulations)[number];
 
+const teamNames = ['Red', 'Blue'];
+
 interface Cell {
 	owners: number[];
 	solvers: number[];
@@ -76,16 +78,25 @@ const Index: Component = () => {
 	const submissions = useFirestore(Submissions);
 	const [searchParams] = useSearchParams();
 
-	const users = createMemo(() => {
-		if (!searchParams.users) {
-			return [];
+	const teams = createMemo<[string[], string[]]>(() => {
+		if (searchParams.team1 && searchParams.team2) {
+			const team1 = Array.isArray(searchParams.team1)
+				? searchParams.team1
+				: searchParams.team1.split(',');
+			const team2 = Array.isArray(searchParams.team2)
+				? searchParams.team2
+				: searchParams.team2.split(',');
+			return [team1, team2];
 		}
 
-		if (Array.isArray(searchParams.users)) {
-			return searchParams.users;
+		if (searchParams.users) {
+			const users = Array.isArray(searchParams.users)
+				? searchParams.users
+				: searchParams.users.split(',');
+			return [users[0] ? [users[0]] : [], users[1] ? [users[1]] : []];
 		}
 
-		return searchParams.users.split(',');
+		return [[], []];
 	});
 
 	const dates = createMemo<{from: number; to: number}>(() => {
@@ -124,7 +135,7 @@ const Index: Component = () => {
 			(submission) => submission.language,
 		);
 
-		const targetUsers = users();
+		const targetTeams = teams();
 
 		for (const regulation of regulations) {
 			const row: Cell[] = [];
@@ -134,7 +145,7 @@ const Index: Component = () => {
 
 				const acceptedSubmissions = submissions
 					.filter((submission) => submission.result === 'AC')
-					.filter((submission) => targetUsers.includes(submission.user))
+					.filter((submission) => targetTeams.flat().includes(submission.user))
 					.filter(
 						(submission) => calculateScore(submission, regulation) !== null,
 					)
@@ -160,14 +171,14 @@ const Index: Component = () => {
 					owners: sortBy(
 						uniq(
 							bestSubmissions.map((submission) =>
-								targetUsers.indexOf(submission.user),
+								targetTeams.findIndex((team) => team.includes(submission.user)),
 							),
 						),
 					),
 					solvers: sortBy(
 						uniq(
 							acceptedSubmissions.map((submission) =>
-								targetUsers.indexOf(submission.user),
+								targetTeams.findIndex((team) => team.includes(submission.user)),
 							),
 						),
 					),
@@ -335,7 +346,7 @@ const Index: Component = () => {
 			</div>
 
 			<div class={styles.userScores}>
-				{users().map((user, i) =>
+				{teams().map((teamUsers, i) =>
 					i === 0 ? (
 						<span
 							classList={{
@@ -344,7 +355,8 @@ const Index: Component = () => {
 							}}
 						>
 							<span class={styles.bingo}>
-								{user} {userScores()[i].bingo}
+								{teamUsers.length === 1 ? teamUsers[0] : teamNames[i]}{' '}
+								{userScores()[i].bingo}
 							</span>
 							<span class={styles.otherScores}>
 								solves: {userScores()[i].solves}, owners:{' '}
@@ -361,7 +373,8 @@ const Index: Component = () => {
 								}}
 							>
 								<span class={styles.bingo}>
-									{userScores()[i].bingo} {user}
+									{userScores()[i].bingo}{' '}
+									{teamUsers.length === 1 ? teamUsers[0] : teamNames[i]}
 								</span>
 								<span class={styles.otherScores}>
 									solves: {userScores()[i].solves}, owners:{' '}
