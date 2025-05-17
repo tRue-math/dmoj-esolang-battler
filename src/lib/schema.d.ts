@@ -17,3 +17,15 @@ export interface Submission extends DocumentData {
 	result: string;
 	code: string | null;
 }
+
+export interface CellBase extends DocumentData {
+	language: string;
+	languageId: string;
+	adjacent: string[];
+}
+
+export interface Cell extends CellBase {
+	owner: string | null;
+	score: number | null;
+	submissionId: number | null;
+}
