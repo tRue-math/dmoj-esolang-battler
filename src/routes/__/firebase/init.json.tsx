@@ -1,7 +1,11 @@
-export function GET() {
+export async function GET() {
 	if (!import.meta.env.DEV) {
 		return new Response(null, {status: 404});
 	}
 
-	return fetch('http://localhost:5000/__/firebase/init.json');
+	const res = await fetch(
+		'https://dmoj-esolang-battle.web.app/__/firebase/init.json',
+	);
+	const data = await res.json();
+	return data;
 }
