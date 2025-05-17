@@ -5,16 +5,48 @@ import * as logger from 'firebase-functions/logger';
 import {initializeApp} from 'firebase-admin/app';
 import {getFirestore} from 'firebase-admin/firestore';
 import {defineString} from 'firebase-functions/params';
+// biome-ignore lint: biome adds unnecessary ext
+import {territoryData} from './territoryData';
 
 const app = initializeApp();
 const db = getFirestore(app);
 
 const Submission = db.collection('submissions');
+const Territory = db.collection('territory');
 
 const apiTokenConfig = defineString('API_TOKEN');
 const apiHostConfig = defineString('API_HOST');
 const sessionIdConfig = defineString('SESSION_ID');
 const problemIdConfig = defineString('PROBLEM_ID');
+
+export const initializeTerritory = onRequest(async (req, res) => {
+	if (req.method !== 'GET') {
+		res.status(405).send('Method Not Allowed');
+		return;
+	}
+
+	logger.info('Initializing territory');
+
+	const batch = db.batch();
+
+	for (const cell of territoryData) {
+		batch.set(
+			Territory.doc(cell.language),
+			{
+				language: cell.language,
+				languageId: cell.languageId,
+				adjacent: cell.adjacent,
+				owner: null,
+				score: null,
+				submissionId: null,
+			},
+			{merge: true},
+		);
+	}
+	await batch.commit();
+
+	logger.info('Initialized territory');
+});
 
 export const scrapeSubmissions = onSchedule('every 1 minutes', async () => {
 	logger.info('Scraping submissions');
