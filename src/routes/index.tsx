@@ -1,18 +1,26 @@
 import {type Accessor, createMemo, type Component} from 'solid-js';
 import {Submissions} from '~/lib/firebase';
 import {useFirestore} from 'solid-firebase';
-import {groupBy, minBy, sortBy, uniq, zip} from 'lodash-es';
+import {groupBy, minBy, sortBy, uniq} from 'lodash-es';
 import type {Submission} from '~/lib/schema';
 
 import styles from './index.module.css';
 import {useSearchParams} from '@solidjs/router';
 
 const languages: [string, string][] = [
-	['Sed', 'SED'],
-	['Java', 'JAVA'],
-	['C', 'C11'],
-	['Python', 'PYPY3'],
+	['Rust', 'RUST'],
+	['プロデル', 'PRDR'],
+	['Mines', 'MINES'],
+	['OCaml', 'OCAML'],
 	['Ruby', 'RUBY'],
+	['Starry', 'STARRY'],
+	['Brainfuck', 'BFPY'],
+	['ferNANDo', 'FNAND'],
+	['C', 'C11'],
+	['><>', 'FISH'],
+	['05AB1E', 'OSABIE'],
+	['Aheui', 'AHEUI'],
+	['Python', 'PYPY3'],
 ];
 
 const regulations = [
@@ -30,8 +38,8 @@ type Regulation = (typeof regulations)[number];
 const teamNames = ['Red', 'Blue'];
 
 interface Cell {
-	owners: number[];
-	solvers: number[];
+	language: string;
+	teams: number[];
 	score: number | null;
 	submissionId: number | null;
 }
@@ -124,225 +132,162 @@ const Index: Component = () => {
 		};
 	});
 
-	const bingoCells: Accessor<Cell[][]> = createMemo(() => {
-		if (!submissions.data) {
-			return [];
-		}
-
-		const cells: Cell[][] = [];
+	const golfCells: Accessor<Cell[]> = createMemo(() => {
+		const cells: Cell[] = [];
 		const submissionsByLanguage = groupBy(
 			submissions.data,
 			(submission) => submission.language,
 		);
 
 		const targetTeams = teams();
+		for (const [_languageName, languageId] of languages) {
+			const submissions = submissionsByLanguage[languageId] || [];
 
-		for (const regulation of regulations) {
-			const row: Cell[] = [];
+			const acceptedSubmissions = submissions
+				.filter((submission) => submission.result === 'AC')
+				.filter((submission) => targetTeams.flat().includes(submission.user))
+				.filter((submission) => calculateScore(submission, 'Short') == null)
+				.filter((submission) => {
+					const date = new Date(submission.date).getTime();
+					return dates().from <= date && date <= dates().to;
+				});
+			const scoreSubmission = minBy(acceptedSubmissions, (submission) =>
+				calculateScore(submission, 'Short'),
+			);
+			const score = scoreSubmission
+				? calculateScore(scoreSubmission, 'Short')
+				: null;
+			const bestSubmissions =
+				score === null
+					? []
+					: acceptedSubmissions.filter(
+							(submission) => calculateScore(submission, 'Short') === score,
+						);
 
-			for (const [_languageName, languageId] of languages) {
-				const submissions = submissionsByLanguage[languageId] || [];
-
-				const acceptedSubmissions = submissions
-					.filter((submission) => submission.result === 'AC')
-					.filter((submission) => targetTeams.flat().includes(submission.user))
-					.filter(
-						(submission) => calculateScore(submission, regulation) !== null,
-					)
-					.filter((submission) => {
-						const date = new Date(submission.date).getTime();
-						return dates().from <= date && date <= dates().to;
-					});
-				const scoreSubmission = minBy(acceptedSubmissions, (submission) =>
-					calculateScore(submission, regulation),
-				);
-				const score = scoreSubmission
-					? calculateScore(scoreSubmission, regulation)
-					: null;
-				const bestSubmissions =
-					score === null
-						? []
-						: acceptedSubmissions.filter(
-								(submission) =>
-									calculateScore(submission, regulation) === score,
-							);
-
-				const cell: Cell = {
-					owners: sortBy(
-						uniq(
-							bestSubmissions.map((submission) =>
-								targetTeams.findIndex((team) => team.includes(submission.user)),
-							),
+			const cell: Cell = {
+				language: _languageName,
+				teams: sortBy(
+					uniq(
+						bestSubmissions.map((submission) =>
+							targetTeams.findIndex((team) => team.includes(submission.user)),
 						),
 					),
-					solvers: sortBy(
-						uniq(
-							acceptedSubmissions.map((submission) =>
-								targetTeams.findIndex((team) => team.includes(submission.user)),
-							),
-						),
-					),
-					score,
-					submissionId:
-						bestSubmissions.length > 0 ? bestSubmissions[0].id : null,
-				};
+				),
+				score,
+				submissionId: bestSubmissions.length > 0 ? bestSubmissions[0].id : null,
+			};
 
-				row.push(cell);
-			}
-
-			cells.push(row);
+			cells.push(cell);
 		}
-
+		const redCell = {
+			language: 'RED',
+			teams: [],
+			score: null,
+			submissionId: null,
+		};
+		const blueCell = {
+			language: 'BLUE',
+			teams: [],
+			score: null,
+			submissionId: null,
+		};
+		cells.unshift(redCell);
+		cells.splice(6, 0, blueCell, redCell);
+		cells.splice(9, 0, blueCell);
+		cells.splice(11, 0, redCell);
+		cells.splice(13, 0, blueCell, redCell);
+		cells.push(blueCell);
+		//デバッグ用
+		// const debugBlue = {
+		// 	language: 'DEBUG',
+		// 	teams: [1],
+		// 	score: 10,
+		// 	submissionId: null,
+		// };
+		// const debugRed = {
+		// 	language: 'DEBUG',
+		// 	teams: [0],
+		// 	score: 10,
+		// 	submissionId: null,
+		// };
+		// return [
+		// 	redCell,
+		// 	debugBlue,
+		// 	debugRed,
+		// 	debugRed,
+		// 	debugBlue,
+		// 	debugBlue,
+		// 	blueCell,
+		// 	redCell,
+		// 	debugRed,
+		// 	blueCell,
+		// 	debugRed,
+		// 	redCell,
+		// 	debugRed,
+		// 	blueCell,
+		// 	redCell,
+		// 	debugBlue,
+		// 	debugBlue,
+		// 	debugBlue,
+		// 	debugBlue,
+		// 	debugBlue,
+		// 	blueCell,
+		// ];
 		return cells;
 	});
 
-	interface UserScore {
-		bingo: number;
-		solves: number;
-		owners: number;
-	}
-
-	const userScores = createMemo<UserScore[]>(() => {
-		const cells = bingoCells();
+	const userScores = createMemo<number[]>(() => {
+		const cells = golfCells();
 
 		if (cells.length === 0) {
-			return [
-				{
-					bingo: 0,
-					solves: 0,
-					owners: 0,
-				},
-				{
-					bingo: 0,
-					solves: 0,
-					owners: 0,
-				},
-			];
-		}
-
-		const userScores = new Map<number, number>();
-
-		const addScore = (user: number) => {
-			const score = userScores.get(user) || 0;
-			userScores.set(user, score + 1);
-		};
-
-		// Vertical lines
-		for (let i = 0; i < 5; i++) {
-			const users = cells.map((row) => row[i].owners);
-			const commonUsers = users.reduce((prev, current) =>
-				prev.filter((user) => current.includes(user)),
-			);
-			commonUsers.forEach(addScore);
-		}
-
-		// Horizontal lines
-		for (const row of cells) {
-			const users = row.map((cell) => cell.owners);
-			const commonUsers = users.reduce((prev, current) =>
-				prev.filter((user) => current.includes(user)),
-			);
-			commonUsers.forEach(addScore);
-		}
-
-		// Diagonal lines
-		{
-			const users = [0, 1, 2, 3, 4].map((i) => cells[i][i].owners);
-			const commonUsers = users.reduce((prev, current) =>
-				prev.filter((user) => current.includes(user)),
-			);
-			commonUsers.forEach(addScore);
-		}
-
-		{
-			const users = [0, 1, 2, 3, 4].map((i) => cells[i][4 - i].owners);
-			const commonUsers = users.reduce((prev, current) =>
-				prev.filter((user) => current.includes(user)),
-			);
-			commonUsers.forEach(addScore);
-		}
-
-		const solves = new Map<number, number>();
-
-		for (const row of cells) {
-			for (const cell of row) {
-				for (const user of cell.solvers) {
-					const solve = solves.get(user) || 0;
-					solves.set(user, solve + 1);
-				}
-			}
+			return [0, 0];
 		}
 
 		const owners = new Map<number, number>();
 
-		for (const row of cells) {
-			for (const cell of row) {
-				for (const user of cell.owners) {
-					const owner = owners.get(user) || 0;
-					owners.set(user, owner + 1);
-				}
+		for (const cell of cells) {
+			for (const team of cell.teams) {
+				const owner = owners.get(team) || 0;
+				owners.set(team, owner + 1);
 			}
 		}
 
-		return [
-			{
-				bingo: userScores.get(0) || 0,
-				solves: solves.get(0) || 0,
-				owners: owners.get(0) || 0,
-			},
-			{
-				bingo: userScores.get(1) || 0,
-				solves: solves.get(1) || 0,
-				owners: owners.get(1) || 0,
-			},
-		];
+		return [owners.get(0) || 0, owners.get(1) || 0];
 	});
 
 	return (
 		<div class={styles.container}>
-			<h1 class={styles.title}>TSG LIVE! 13: Codegolf Bingo</h1>
+			<h1 class={styles.title}>TSG LIVE! 14: Codegolf</h1>
 			<div class={styles.bingoCard}>
-				<table class={styles.bingoTable}>
-					<thead>
-						<tr>
-							<th />
-							{languages.map(([languageName]) => (
-								<th class={styles.languageHeader}>{languageName}</th>
-							))}
-						</tr>
-					</thead>
-					<tbody>
-						{zip(bingoCells(), regulations, pars).map(
-							([cells, regulation, par]) => (
-								<tr>
-									<th class={styles.regulationHeader}>
-										{regulation} {par === null ? '' : `(Par ${par})`}
-									</th>
-									{cells?.map((cell) => (
-										<td
-											class={styles.cell}
-											classList={{
-												[styles[`user-${cell.owners.join('')}`]]: true,
-											}}
-										>
-											<a
-												target="_blank"
-												rel="noopener noreferrer"
-												href={
-													cell.submissionId === null
-														? undefined
-														: `http://${import.meta.env.VITE_API_HOST}/submission/${cell.submissionId}`
-												}
-											>
-												{regulation === 'Free' ? '' : cell.score}
-											</a>
-										</td>
-									))}
-								</tr>
-							),
-						)}
-					</tbody>
-				</table>
+				<div class={styles.golfGrid}>
+					{golfCells().map((cell) =>
+						cell.language === 'RED' || cell.language === 'BLUE' ? (
+							<div
+								class={styles.cell}
+								classList={{
+									[styles[`user-${cell.language === 'RED' ? 0 : 1}`]]: true,
+								}}
+							/>
+						) : (
+							<a
+								class={styles.cell}
+								classList={{
+									[styles[`user-${cell.teams.join('')}`]]: true,
+								}}
+								target="_blank"
+								rel="noopener noreferrer"
+								href={
+									cell.submissionId === null
+										? undefined
+										: `http://${import.meta.env.VITE_API_HOST}/submission/${cell.submissionId}`
+								}
+							>
+								<div class={styles.languageName}>{cell.language}</div>
+								<div class={styles.score}>{cell.score}</div>
+							</a>
+						),
+					)}
+				</div>
 			</div>
 
 			<div class={styles.userScores}>
@@ -356,11 +301,7 @@ const Index: Component = () => {
 						>
 							<span class={styles.bingo}>
 								{teamUsers.length === 1 ? teamUsers[0] : teamNames[i]}{' '}
-								{userScores()[i].bingo}
-							</span>
-							<span class={styles.otherScores}>
-								solves: {userScores()[i].solves}, owners:{' '}
-								{userScores()[i].owners}
+								{userScores()[i]}
 							</span>
 						</span>
 					) : (
@@ -373,12 +314,8 @@ const Index: Component = () => {
 								}}
 							>
 								<span class={styles.bingo}>
-									{userScores()[i].bingo}{' '}
+									{userScores()[i]}{' '}
 									{teamUsers.length === 1 ? teamUsers[0] : teamNames[i]}
-								</span>
-								<span class={styles.otherScores}>
-									solves: {userScores()[i].solves}, owners:{' '}
-									{userScores()[i].owners}
 								</span>
 							</span>
 						</span>

@@ -12,6 +12,16 @@ h1.title {
 	margin: 0 auto;
 }
 
+.golfGrid {
+	display: grid;
+	grid-template-columns: repeat(7, 1fr);
+	grid-template-rows: repeat(3, 1fr);
+	gap: 2px;
+	width: 70rem;
+	height: 30rem;
+	margin: 0 auto;
+}
+
 .languageHeader,
 .regulationHeader {
 	background: #333;
@@ -35,6 +45,9 @@ h1.title {
 }
 
 .cell {
+	aspect-ratio: 1 / 1;
+	width: 100%;
+	height: auto;
 	border: 0.1rem solid #fff;
 	box-sizing: border-box;
 	font-family: monospace;
