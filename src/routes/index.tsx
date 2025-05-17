@@ -23,18 +23,6 @@ const languages: [string, string][] = [
 	['Python', 'PYPY3'],
 ];
 
-const regulations = [
-	'SymbolLess',
-	'Short',
-	'Free',
-	'Simple',
-	'Vertical',
-] as const;
-
-const pars = [10, 200, null, 50, 15];
-
-type Regulation = (typeof regulations)[number];
-
 const teamNames = ['Red', 'Blue'];
 
 interface Cell {
@@ -44,42 +32,8 @@ interface Cell {
 	submissionId: number | null;
 }
 
-const calculateScore = (submission: Submission, regulation: Regulation) => {
-	const par = pars[regulations.indexOf(regulation)]!;
-
-	let score: number | null = 0;
-
-	switch (regulation) {
-		case 'SymbolLess': {
-			const symbols = '+-*/%&|^[]:';
-			score = Array.from(submission.code || '').filter((char) =>
-				symbols.includes(char),
-			).length;
-			break;
-		}
-		case 'Short':
-			score = submission.code?.length ?? null;
-			break;
-		case 'Free':
-			score = 1;
-			break;
-		case 'Simple': {
-			const uniqueCharacters = new Set(Array.from(submission.code || ''));
-			score = uniqueCharacters.size;
-			break;
-		}
-		case 'Vertical': {
-			const lines = (submission.code || '').split(/\r?\n/);
-			score = Math.max(...lines.map((line) => line.length));
-			break;
-		}
-	}
-
-	if (par !== null && score !== null && score > par) {
-		score = null;
-	}
-
-	return score;
+const countBytes = (submission: Submission) => {
+	return submission.code?.length ?? null;
 };
 
 const Index: Component = () => {
@@ -146,22 +100,20 @@ const Index: Component = () => {
 			const acceptedSubmissions = submissions
 				.filter((submission) => submission.result === 'AC')
 				.filter((submission) => targetTeams.flat().includes(submission.user))
-				.filter((submission) => calculateScore(submission, 'Short') == null)
+				.filter((submission) => countBytes(submission) == null)
 				.filter((submission) => {
 					const date = new Date(submission.date).getTime();
 					return dates().from <= date && date <= dates().to;
 				});
 			const scoreSubmission = minBy(acceptedSubmissions, (submission) =>
-				calculateScore(submission, 'Short'),
+				countBytes(submission),
 			);
-			const score = scoreSubmission
-				? calculateScore(scoreSubmission, 'Short')
-				: null;
+			const score = scoreSubmission ? countBytes(scoreSubmission) : null;
 			const bestSubmissions =
 				score === null
 					? []
 					: acceptedSubmissions.filter(
-							(submission) => calculateScore(submission, 'Short') === score,
+							(submission) => countBytes(submission) === score,
 						);
 
 			const cell: Cell = {
@@ -174,7 +126,7 @@ const Index: Component = () => {
 					),
 				),
 				score,
-				submissionId: bestSubmissions.length > 0 ? bestSubmissions[0].id : null,
+				submissionId: scoreSubmission ? scoreSubmission.id : null,
 			};
 
 			cells.push(cell);
