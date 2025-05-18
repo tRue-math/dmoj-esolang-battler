@@ -36,7 +36,10 @@ export const initializeData = onRequest(async (req, res) => {
 				language: cell.language,
 				languageId: cell.languageId,
 				adjacent: cell.adjacent,
-				owner: null,
+				owner:
+					cell.language === 'Red' || cell.language === 'Blue'
+						? cell.language
+						: null,
 				score: null,
 				submissionId: null,
 			},
@@ -162,7 +165,12 @@ export const onSubmissionCreated = onDocumentCreated(
 		const {language, user} = await submission.data();
 		const score = countBytes(data);
 		const team = (await Team.where('players', 'array-contains', user).get())
-			.docs[0].id;
+			.docs[0]?.id;
+		if (!team) {
+			logger.error(`Team not found for user ${user}`);
+			return;
+		}
+		logger.info(`Team ${team} found for user ${user}`);
 
 		await submission.ref.update({
 			code: data,
@@ -206,6 +214,10 @@ export const onSubmissionCreated = onDocumentCreated(
 					owner: team,
 				});
 			}
+		} else {
+			logger.info(
+				`Cell ${targetCell.language} is not adjacent to team ${team}`,
+			);
 		}
 	},
 );

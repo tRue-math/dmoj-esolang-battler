@@ -28,12 +28,12 @@ export const territoryData = [
 	{
 		language: 'Rust',
 		languageId: 'RUST',
-		adjacent: ['Starry', 'プロデル'],
+		adjacent: ['Starry', 'プロデル', 'Red'],
 	},
 	{
 		language: 'プロデル',
 		languageId: 'PRDR',
-		adjacent: ['Rust', 'Mines'],
+		adjacent: ['Rust', 'Mines', 'Blue'],
 	},
 	{
 		language: 'Mines',
@@ -43,37 +43,37 @@ export const territoryData = [
 	{
 		language: 'OCaml',
 		languageId: 'OCAML',
-		adjacent: ['Mines', 'Ruby'],
+		adjacent: ['Mines', 'Ruby', 'Red'],
 	},
 	{
 		language: 'Ruby',
 		languageId: 'RUBY',
-		adjacent: ['OCaml', 'ferNANDo'],
+		adjacent: ['OCaml', 'ferNANDo', 'Blue'],
 	},
 	{
 		language: 'Starry',
 		languageId: 'STARRY',
-		adjacent: ['Rust', 'C'],
+		adjacent: ['Rust', 'C', 'Red', 'Blue'],
 	},
 	{
 		language: 'Brainfuck',
 		languageId: 'BFPY',
-		adjacent: ['Mines', '05AB1E'],
+		adjacent: ['Mines', '05AB1E', 'Red', 'Blue'],
 	},
 	{
 		language: 'ferNANDo',
 		languageId: 'FNAND',
-		adjacent: ['Ruby', 'Python'],
+		adjacent: ['Ruby', 'Python', 'Red', 'Blue'],
 	},
 	{
 		language: 'C',
 		languageId: 'C11',
-		adjacent: ['Starry', '><>'],
+		adjacent: ['Starry', '><>', 'Red'],
 	},
 	{
 		language: '><>',
 		languageId: 'FISH',
-		adjacent: ['C', '05AB1E'],
+		adjacent: ['C', '05AB1E', 'Blue'],
 	},
 	{
 		language: '05AB1E',
@@ -83,12 +83,12 @@ export const territoryData = [
 	{
 		language: 'Aheui',
 		languageId: 'AHEUI',
-		adjacent: ['05AB1E', 'Python'],
+		adjacent: ['05AB1E', 'Python', 'Red'],
 	},
 	{
 		language: 'Python',
 		languageId: 'PYPY3',
-		adjacent: ['ferNANDo', 'Aheui'],
+		adjacent: ['ferNANDo', 'Aheui', 'Blue'],
 	},
 ] as const;
 
