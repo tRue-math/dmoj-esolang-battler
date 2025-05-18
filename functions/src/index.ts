@@ -142,7 +142,7 @@ const countBytes = (code: string | null) => {
 	if (!code) {
 		return null;
 	}
-	return new TextEncoder().encode(code).length;
+	return new TextEncoder().encode(code.replace(/\r\n/g, '\n')).length;
 };
 
 export const onSubmissionCreated = onDocumentCreated(
