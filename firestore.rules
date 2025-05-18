@@ -5,5 +5,9 @@ service cloud.firestore {
     match /submissions/{taskId} {
       allow read;
     }
+
+    match /territory/{document=**} {
+      allow read;
+    }
   }
 }
