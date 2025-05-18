@@ -174,7 +174,9 @@ export const onSubmissionCreated = onDocumentCreated(
 			return;
 		}
 
-		const targetCell = (await Territory.doc(language).get()).data() as {
+		const targetCell = (
+			await Territory.where('languageId', '==', language).get()
+		).docs[0].data() as {
 			language: string;
 			score: number | null;
 			owner: string | null;
@@ -185,12 +187,16 @@ export const onSubmissionCreated = onDocumentCreated(
 			return;
 		}
 
-		if (
-			targetCell.adjacent.filter(
-				async (lang) =>
-					(await Territory.doc(lang).get()).data()?.owner === team,
-			).length > 0
-		) {
+		const isAdjacentToTeam = (
+			await Promise.all(
+				targetCell.adjacent.map(async (lang) => {
+					const doc = await Territory.doc(lang).get();
+					return doc.data()?.owner === team;
+				}),
+			)
+		).some(Boolean);
+
+		if (isAdjacentToTeam) {
 			logger.info(`Cell ${targetCell.language} is adjacent to team ${team}`);
 			if (targetCell.score === null || targetCell.score > score) {
 				logger.info(`Updating cell ${targetCell.language} score to ${score}`);
