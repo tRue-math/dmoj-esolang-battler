@@ -58,6 +58,8 @@ export const initializeData = onRequest(async (req, res) => {
 	}
 	await batch.commit();
 	logger.info('Initialized territory and team');
+
+	await paintTerritory();
 });
 
 export const scrapeSubmissions = onSchedule('every 1 minutes', async () => {
@@ -233,7 +235,7 @@ const territoryUpdate = async ({
 	}
 };
 
-export const paintTerritory = onSchedule('every 1 minutes', async () => {
+const paintTerritory = async () => {
 	logger.info('Painting territory');
 	const batch = db.batch();
 
@@ -251,4 +253,19 @@ export const paintTerritory = onSchedule('every 1 minutes', async () => {
 	}
 	await batch.commit();
 	logger.info('Painted territory');
+};
+
+export const scheduledTerritoryUpdate = onSchedule(
+	'every 1 minutes',
+	paintTerritory,
+);
+export const requestedTerritoryUpdate = onRequest(async (req, res) => {
+	if (req.method !== 'POST') {
+		res.status(405).send('Method Not Allowed');
+		return;
+	}
+
+	logger.info('Requested territory update');
+	await paintTerritory();
+	res.send('Territory updated');
 });
