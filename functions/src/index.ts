@@ -139,7 +139,10 @@ export const invalidateSubmissions = onRequest(async (req, res) => {
 });
 
 const countBytes = (code: string | null) => {
-	return code?.length ?? null;
+	if (!code) {
+		return null;
+	}
+	return new TextEncoder().encode(code).length;
 };
 
 export const onSubmissionCreated = onDocumentCreated(
