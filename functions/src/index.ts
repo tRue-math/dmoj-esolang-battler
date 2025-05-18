@@ -162,7 +162,7 @@ export const onSubmissionCreated = onDocumentCreated(
 			},
 		});
 		const data = await res.text();
-		const {language, user} = await submission.data();
+		const {user} = await submission.data();
 		const score = countBytes(data);
 		const team = (await Team.where('players', 'array-contains', user).get())
 			.docs[0]?.id;
@@ -172,52 +172,83 @@ export const onSubmissionCreated = onDocumentCreated(
 		}
 		logger.info(`Team ${team} found for user ${user}`);
 
-		await submission.ref.update({
-			code: data,
-			bytes: score,
-		});
-
 		if (!score) {
 			logger.error(`Score is null for submission ${submission.id}`);
 			return;
 		}
 
-		const targetCell = (
-			await Territory.where('languageId', '==', language).get()
-		).docs[0].data() as {
-			language: string;
-			score: number | null;
-			owner: string | null;
-			adjacent: string[];
-		};
-		if (!targetCell) {
-			logger.error(`Target cell data not found for language ${language}`);
-			return;
-		}
-
-		const isAdjacentToTeam = (
-			await Promise.all(
-				targetCell.adjacent.map(async (lang) => {
-					const doc = await Territory.doc(lang).get();
-					return doc.data()?.owner === team;
-				}),
-			)
-		).some(Boolean);
-
-		if (isAdjacentToTeam) {
-			logger.info(`Cell ${targetCell.language} is adjacent to team ${team}`);
-			if (targetCell.score === null || targetCell.score > score) {
-				logger.info(`Updating cell ${targetCell.language} score to ${score}`);
-				await Territory.doc(targetCell.language).update({
-					score: score,
-					submissionId: submission.id,
-					owner: team,
-				});
-			}
-		} else {
-			logger.info(
-				`Cell ${targetCell.language} is not adjacent to team ${team}`,
-			);
-		}
+		await submission.ref.update({
+			bytes: score,
+			code: data,
+			team,
+		});
 	},
 );
+
+const territoryUpdate = async ({
+	language,
+	team,
+	score,
+	submissionId,
+}: {
+	language: string;
+	team: string;
+	score: number;
+	submissionId: number;
+}) => {
+	const targetCell = (
+		await Territory.where('languageId', '==', language).get()
+	).docs[0].data() as {
+		language: string;
+		score: number | null;
+		owner: string | null;
+		adjacent: string[];
+	};
+	if (!targetCell) {
+		logger.error(`Target cell data not found for language ${language}`);
+		return;
+	}
+
+	const isAdjacentToTeam = (
+		await Promise.all(
+			targetCell.adjacent.map(async (lang) => {
+				const doc = await Territory.doc(lang).get();
+				return doc.data()?.owner === team;
+			}),
+		)
+	).some(Boolean);
+
+	if (isAdjacentToTeam) {
+		logger.info(`Cell ${targetCell.language} is adjacent to team ${team}`);
+		if (targetCell.score === null || targetCell.score > score) {
+			logger.info(`Updating cell ${targetCell.language} score to ${score}`);
+			await Territory.doc(targetCell.language).update({
+				score,
+				submissionId,
+				owner: team,
+			});
+		}
+	} else {
+		logger.info(`Cell ${targetCell.language} is not adjacent to team ${team}`);
+	}
+};
+
+export const paintTerritory = onSchedule('every 1 minutes', async () => {
+	logger.info('Painting territory');
+	const batch = db.batch();
+
+	const batchSize = 500;
+
+	const query = (await Submission.orderBy('date').limit(batchSize).get()).docs;
+
+	for (const doc of query) {
+		const {language, team, bytes: score, id: submissionId} = await doc.data();
+		if (!(language && team && score)) {
+			logger.error('Language, team or score not found');
+			continue;
+		}
+		await territoryUpdate({language, team, score, submissionId});
+	}
+	await batch.commit();
+	logger.info('Painted territory');
+});
