@@ -91,3 +91,14 @@ export const territoryData = [
 		adjacent: ['ferNANDo', 'Aheui'],
 	},
 ] as const;
+
+export const teamData = [
+	{
+		team: 'Red',
+		players: ['alcea'],
+	},
+	{
+		team: 'Blue',
+		players: ['tRue'],
+	},
+] as const;
