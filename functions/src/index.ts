@@ -159,9 +159,10 @@ export const onSubmissionCreated = onDocumentCreated(
 			},
 		});
 		const data = await res.text();
-		const language = submission.data().language;
-		const score = await countBytes(data);
-		const team = 'Red'; // TODO: Get team from submission
+		const {language, user} = await submission.data();
+		const score = countBytes(data);
+		const team = (await Team.where('players', 'array-contains', user).get())
+			.docs[0].id;
 
 		await submission.ref.update({
 			code: data,
