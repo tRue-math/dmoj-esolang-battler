@@ -124,6 +124,10 @@ export const invalidateSubmissions = onRequest(async (req, res) => {
 	res.send(`Invalidated ${count} submissions`);
 });
 
+const countBytes = (code: string | null) => {
+	return code?.length ?? null;
+};
+
 export const onSubmissionCreated = onDocumentCreated(
 	'submissions/{submissionId}',
 	async (event) => {
@@ -146,9 +150,46 @@ export const onSubmissionCreated = onDocumentCreated(
 			},
 		});
 		const data = await res.text();
+		const language = submission.data().language;
+		const score = await countBytes(data);
+		const team = 'Red'; // TODO: Get team from submission
 
 		await submission.ref.update({
 			code: data,
+			bytes: score,
 		});
+
+		if (!score) {
+			logger.error(`Score is null for submission ${submission.id}`);
+			return;
+		}
+
+		const targetCell = (await Territory.doc(language).get()).data() as {
+			language: string;
+			score: number | null;
+			owner: string | null;
+			adjacent: string[];
+		};
+		if (!targetCell) {
+			logger.error(`Target cell data not found for language ${language}`);
+			return;
+		}
+
+		if (
+			targetCell.adjacent.filter(
+				async (lang) =>
+					(await Territory.doc(lang).get()).data()?.owner === team,
+			).length > 0
+		) {
+			logger.info(`Cell ${targetCell.language} is adjacent to team ${team}`);
+			if (targetCell.score === null || targetCell.score > score) {
+				logger.info(`Updating cell ${targetCell.language} score to ${score}`);
+				await Territory.doc(targetCell.language).update({
+					score: score,
+					submissionId: submission.id,
+					owner: team,
+				});
+			}
+		}
 	},
 );
