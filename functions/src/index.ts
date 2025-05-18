@@ -261,7 +261,6 @@ const paintTerritory = async () => {
 		if (result === 'AC') {
 			await territoryUpdate({language, team, score, submissionId});
 		}
-		await territoryUpdate({language, team, score, submissionId});
 	}
 	await batch.commit();
 	logger.info('Painted territory');
