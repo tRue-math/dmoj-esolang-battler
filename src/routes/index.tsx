@@ -184,7 +184,9 @@ const Index: Component = () => {
 							<a
 								class={styles.cell}
 								classList={{
-									[styles[`user-${cell.owner === 'Red' ? 0 : 1}`]]: true,
+									[styles[
+										`user-${cell.owner ? (cell.owner === 'Red' ? 0 : 1) : ''}`
+									]]: true,
 								}}
 								target="_blank"
 								rel="noopener noreferrer"
