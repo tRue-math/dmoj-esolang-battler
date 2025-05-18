@@ -1,43 +1,31 @@
 import {type Accessor, createMemo, type Component} from 'solid-js';
-import {Submissions} from '~/lib/firebase';
+import {Territory} from '~/lib/firebase';
 import {useFirestore} from 'solid-firebase';
-import {groupBy, minBy, sortBy, uniq} from 'lodash-es';
-import type {Submission} from '~/lib/schema';
+import type {Cell} from '~/lib/schema';
 
 import styles from './index.module.css';
 import {useSearchParams} from '@solidjs/router';
 
-const languages: [string, string][] = [
-	['Rust', 'RUST'],
-	['プロデル', 'PRDR'],
-	['Mines', 'MINES'],
-	['OCaml', 'OCAML'],
-	['Ruby', 'RUBY'],
-	['Starry', 'STARRY'],
-	['Brainfuck', 'BFPY'],
-	['ferNANDo', 'FNAND'],
-	['C', 'C11'],
-	['><>', 'FISH'],
-	['05AB1E', 'OSABIE'],
-	['Aheui', 'AHEUI'],
-	['Python', 'PYPY3'],
+const languages: string[] = [
+	'Rust',
+	'プロデル',
+	'Mines',
+	'OCaml',
+	'Ruby',
+	'Starry',
+	'Brainfuck',
+	'ferNANDo',
+	'C',
+	'><>',
+	'05AB1E',
+	'Aheui',
+	'Python',
 ];
 
 const teamNames = ['Red', 'Blue'];
 
-interface Cell {
-	language: string;
-	teams: number[];
-	score: number | null;
-	submissionId: number | null;
-}
-
-const countBytes = (submission: Submission) => {
-	return submission.code?.length ?? null;
-};
-
 const Index: Component = () => {
-	const submissions = useFirestore(Submissions);
+	const territory = useFirestore(Territory);
 	const [searchParams] = useSearchParams();
 
 	const teams = createMemo<[string[], string[]]>(() => {
@@ -61,7 +49,7 @@ const Index: Component = () => {
 		return [[], []];
 	});
 
-	const dates = createMemo<{from: number; to: number}>(() => {
+	const _dates = createMemo<{from: number; to: number}>(() => {
 		let datefrom = 0;
 		if (searchParams.datefrom) {
 			const datefromString = Array.isArray(searchParams.datefrom)
@@ -87,62 +75,34 @@ const Index: Component = () => {
 	});
 
 	const golfCells: Accessor<Cell[]> = createMemo(() => {
-		const cells: Cell[] = [];
-		const submissionsByLanguage = groupBy(
-			submissions.data,
-			(submission) => submission.language,
+		const cells: Cell[] = languages.map(
+			(language) =>
+				territory.data?.find((cell) => cell.language === language) ?? {
+					language: 'BROKEN',
+					languageId: 'BROKEN',
+					adjacent: [],
+					owner: null,
+					score: null,
+					submissionId: null,
+				},
 		);
 
-		const targetTeams = teams();
-		for (const [_languageName, languageId] of languages) {
-			const submissions = submissionsByLanguage[languageId] || [];
-
-			const acceptedSubmissions = submissions
-				.filter((submission) => submission.result === 'AC')
-				.filter((submission) => targetTeams.flat().includes(submission.user))
-				.filter((submission) => countBytes(submission) == null)
-				.filter((submission) => {
-					const date = new Date(submission.date).getTime();
-					return dates().from <= date && date <= dates().to;
-				});
-			const scoreSubmission = minBy(acceptedSubmissions, (submission) =>
-				countBytes(submission),
-			);
-			const score = scoreSubmission ? countBytes(scoreSubmission) : null;
-			const bestSubmissions =
-				score === null
-					? []
-					: acceptedSubmissions.filter(
-							(submission) => countBytes(submission) === score,
-						);
-
-			const cell: Cell = {
-				language: _languageName,
-				teams: sortBy(
-					uniq(
-						bestSubmissions.map((submission) =>
-							targetTeams.findIndex((team) => team.includes(submission.user)),
-						),
-					),
-				),
-				score,
-				submissionId: scoreSubmission ? scoreSubmission.id : null,
-			};
-
-			cells.push(cell);
-		}
-		const redCell = {
-			language: 'RED',
-			teams: [],
+		const emptyCell = {
+			languageId: '',
+			adjacent: [],
+			owner: null,
 			score: null,
 			submissionId: null,
+		};
+		const redCell = {
+			...emptyCell,
+			language: 'RED',
 		};
 		const blueCell = {
+			...emptyCell,
 			language: 'BLUE',
-			teams: [],
-			score: null,
-			submissionId: null,
 		};
+
 		cells.unshift(redCell);
 		cells.splice(6, 0, blueCell, redCell);
 		cells.splice(9, 0, blueCell);
@@ -151,16 +111,16 @@ const Index: Component = () => {
 		cells.push(blueCell);
 		//デバッグ用
 		// const debugBlue = {
+		// 	...emptyCell,
 		// 	language: 'DEBUG',
-		// 	teams: [1],
+		// 	owner: 'Blue',
 		// 	score: 10,
-		// 	submissionId: null,
 		// };
 		// const debugRed = {
+		// 	...emptyCell,
 		// 	language: 'DEBUG',
-		// 	teams: [0],
+		// 	owner: 'Red',
 		// 	score: 10,
-		// 	submissionId: null,
 		// };
 		// return [
 		// 	redCell,
@@ -195,16 +155,16 @@ const Index: Component = () => {
 			return [0, 0];
 		}
 
-		const owners = new Map<number, number>();
+		const owners = new Map<string, number>();
 
 		for (const cell of cells) {
-			for (const team of cell.teams) {
-				const owner = owners.get(team) || 0;
-				owners.set(team, owner + 1);
+			if (cell.owner === null) {
+				continue;
 			}
+			owners.set(cell.owner, 1 + (owners.get(cell.owner) || 0));
 		}
 
-		return [owners.get(0) || 0, owners.get(1) || 0];
+		return [owners.get('Red') || 0, owners.get('Blue') || 0];
 	});
 
 	return (
@@ -212,7 +172,7 @@ const Index: Component = () => {
 			<h1 class={styles.title}>TSG LIVE! 14: Codegolf</h1>
 			<div class={styles.bingoCard}>
 				<div class={styles.golfGrid}>
-					{golfCells().map((cell) =>
+					{(golfCells() ?? []).map((cell) =>
 						cell.language === 'RED' || cell.language === 'BLUE' ? (
 							<div
 								class={styles.cell}
@@ -224,7 +184,7 @@ const Index: Component = () => {
 							<a
 								class={styles.cell}
 								classList={{
-									[styles[`user-${cell.teams.join('')}`]]: true,
+									[styles[`user-${cell.owner === 'Red' ? 0 : 1}`]]: true,
 								}}
 								target="_blank"
 								rel="noopener noreferrer"

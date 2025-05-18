@@ -7,7 +7,7 @@ import {
 	collection,
 	type CollectionReference,
 } from 'firebase/firestore';
-import type {Submission} from './schema.ts';
+import type {Cell, Submission} from './schema.ts';
 
 const firebaseConfigResponse = await fetch('/__/firebase/init.json');
 const firebaseConfig = await firebaseConfigResponse.json();
@@ -28,6 +28,11 @@ const Submissions = collection(
 	'submissions',
 ) as CollectionReference<Submission>;
 
+const Territory = collection(
+	db,
+	'territory',
+) as CollectionReference<Cell>;
+
 await signInAnonymously(auth);
 
-export {app as default, auth, db, Submissions};
+export {app as default, auth, db, Submissions, Territory};
