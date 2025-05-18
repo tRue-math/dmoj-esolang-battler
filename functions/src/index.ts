@@ -244,10 +244,19 @@ const paintTerritory = async () => {
 	const query = (await Submission.orderBy('date').limit(batchSize).get()).docs;
 
 	for (const doc of query) {
-		const {language, team, bytes: score, id: submissionId} = await doc.data();
+		const {
+			language,
+			team,
+			bytes: score,
+			id: submissionId,
+			result,
+		} = await doc.data();
 		if (!(language && team && score)) {
 			logger.error('Language, team or score not found');
 			continue;
+		}
+		if (result === 'AC') {
+			await territoryUpdate({language, team, score, submissionId});
 		}
 		await territoryUpdate({language, team, score, submissionId});
 	}
