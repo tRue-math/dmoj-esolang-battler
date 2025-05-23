@@ -95,10 +95,10 @@ export const territoryData = [
 export const teamData = [
 	{
 		team: 'Red',
-		players: ['alcea'],
+		players: ['Ojun', 'souta_1326', 'syun0713'],
 	},
 	{
 		team: 'Blue',
-		players: ['tRue'],
+		players: ['okkuu', 'bbbb', 'maguro'],
 	},
 ] as const;
