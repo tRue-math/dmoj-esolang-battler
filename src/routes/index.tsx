@@ -196,7 +196,9 @@ const Index: Component = () => {
 										: `http://${import.meta.env.VITE_API_HOST}/submission/${cell.submissionId}`
 								}
 							>
-								<div class={styles.languageName}>{cell.language}</div>
+								<div class={styles.languageName}>
+									{cell.language === 'Brainfuck' ? 'Brainf*ck' : cell.language}
+								</div>
 								<div class={styles.score}>{cell.score}</div>
 							</a>
 						),
