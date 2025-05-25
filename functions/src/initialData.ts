@@ -67,7 +67,7 @@ export const territoryData = [
 	},
 	{
 		language: 'C',
-		languageId: 'C11',
+		languageId: 'C',
 		adjacent: ['Starry', '><>', 'Red'],
 	},
 	{
